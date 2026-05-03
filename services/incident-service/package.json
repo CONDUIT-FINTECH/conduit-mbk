@@ -1,0 +1,17 @@
+{
+  "name": "@conduit/incident-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@conduit/shared": "1.0.0",
+    "express": "^4.21.0",
+    "ioredis": "^5.10.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.0"
+  }
+}

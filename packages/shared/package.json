@@ -1,0 +1,9 @@
+{
+  "name": "@conduit/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "dependencies": {
+    "kafkajs": "^2.2.4"
+  }
+}

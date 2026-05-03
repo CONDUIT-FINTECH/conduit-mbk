@@ -1,0 +1,15 @@
+{
+  "name": "@conduit/query-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "node --watch src/index.js", "start": "node src/index.js" },
+  "dependencies": {
+    "@conduit/shared": "1.0.0",
+    "express": "^4.21.0",
+    "kafkajs": "^2.2.4",
+    "knex": "^3.1.0",
+    "pg": "^8.11.3",
+    "mongoose": "^8.1.1",
+    "ioredis": "^5.3.2"
+  }
+}

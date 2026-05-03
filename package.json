@@ -1,0 +1,30 @@
+{
+  "name": "conduit-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Conduit — Event-driven fintech backend platform",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:gateway": "npm run dev --workspace=services/api-gateway",
+    "dev:ingestion": "npm run dev --workspace=services/ingestion-service",
+    "dev:metrics": "npm run dev --workspace=services/metrics-service",
+    "dev:query": "npm run dev --workspace=services/query-service",
+    "dev:incident": "npm run dev --workspace=services/incident-service",
+    "dev:websocket": "npm run dev --workspace=services/websocket-service",
+    "dev:remediation": "npm run dev --workspace=services/remediation-service",
+    "dev:all": "npx concurrently \"npm:dev:*\"",
+    "lint": "eslint . --ext .js",
+    "test": "jest --passWithNoTests"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

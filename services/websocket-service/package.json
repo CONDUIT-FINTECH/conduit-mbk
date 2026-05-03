@@ -1,0 +1,17 @@
+{
+  "name": "@conduit/websocket-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@conduit/shared": "1.0.0",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  }
+}

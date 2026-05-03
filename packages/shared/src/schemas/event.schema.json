@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Conduit Event",
+  "type": "object",
+  "required": ["eventType", "source", "timestamp", "payload", "idempotencyKey"],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z_]+$",
+      "description": "Dot-notation event type (e.g., transaction.created)"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Originating system identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Arbitrary event data"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Client-generated UUID for deduplication"
+    }
+  },
+  "additionalProperties": false
+}
