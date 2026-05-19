@@ -52,6 +52,37 @@ services:
     volumes:
       - mongodata:/data/db
 
+  # ─── ML Service (Python) ──────────────────────────
+  ml-service:
+    build:
+      context: ./services/ml-service
+      dockerfile: Dockerfile
+    ports:
+      - '4008:4008'
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_CLIENT_ID: conduit-ml-service
+      KAFKA_GROUP_ID_ML: conduit-ml-group
+      KAFKA_AUTO_OFFSET_RESET: latest
+      ML_WARMUP_SAMPLES: 50
+      ML_MAX_SAMPLES: 1000
+      ML_REFIT_EVERY: 100
+      ML_CONTAMINATION: '0.05'
+      ML_ZSCORE_THRESHOLD: '3.0'
+      ML_MIN_PUBLISH_SCORE: '0.0'
+      ML_MODEL_ID: isolation-forest-v1
+      ML_PORT: 4008
+      LOG_LEVEL: info
+    depends_on:
+      - kafka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4008/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   pgdata:
   tsdata:

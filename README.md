@@ -2,6 +2,8 @@
 
 [![Architecture: CQRS](https://img.shields.io/badge/Architecture-CQRS-blueviolet)](#1-system-architecture)
 [![Messaging: Kafka](https://img.shields.io/badge/Messaging-Kafka-orange)](#2-kafka-topic-design)
+[![ML: IsolationForest](https://img.shields.io/badge/ML-IsolationForest-blue)](#ml-service)
+[![Python: 3.12](https://img.shields.io/badge/Python-3.12-yellow)](#ml-service)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://opensource.org/licenses/MIT)
 
 Conduit is a high-performance, event-driven microservices ecosystem designed for real-time fintech data processing, anomaly detection, and automated remediation.
@@ -10,19 +12,29 @@ Conduit is a high-performance, event-driven microservices ecosystem designed for
 
 ### Prerequisites
 - Node.js >= 20.0.0
+- Python >= 3.12 (for ML Service)
 - Docker & Docker Compose
 - Kafka Cluster (via Docker)
 
 ### Installation & Development
 ```bash
-# Install dependencies
+# Install Node.js dependencies
 npm install
 
-# Start infrastructure (Kafka, Postgres, Redis, TimescaleDB)
+# Install Python ML service dependencies
+cd services/ml-service
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cd ../..
+
+# Start infrastructure (Kafka, Postgres, Redis, TimescaleDB, MongoDB)
 docker-compose up -d
 
-# Run all services in development mode
+# Run all Node.js services in development mode
 npm run dev:all
+
+# Run Python ML service (separate terminal)
+cd services/ml-service && python -m src.main
 ```
 
 ---
@@ -36,7 +48,8 @@ npm run dev:all
 - [6. Metrics Service](#6-metrics-service)
 - [7. Query Service](#7-query-service)
 - [8. WebSocket Service](#8-websocket-service)
-- [9. Tech Stack & Structure](#9-tech-stack--structure)
+- [9. ML Service](#9-ml-service)
+- [10. Tech Stack & Structure](#10-tech-stack--structure)
 
 ---
 
@@ -203,14 +216,41 @@ Scalable real-time push service using Redis Pub/Sub for horizontal fan-out.
 
 ---
 
-## 9. Tech Stack & Structure
+## 9. ML Service
+
+Real-time per-tenant anomaly detection — the Python component of Conduit.
+
+### Architecture
+- **Consumes**: `conduit.metrics.computed` → feature extraction → per-tenant IsolationForest / Z-score
+- **Produces**: `conduit.ml.predictions` → consumed by Incident, Query, and WebSocket services
+
+### Model Pipeline
+- **Warm-up phase**: Z-score baseline until 50 samples collected per tenant
+- **Production phase**: IsolationForest (scikit-learn) with periodic re-fitting
+- **Labels**: `system_failure`, `performance_degradation`, `traffic_spike`, `latency_drift`, `metric_anomaly`
+- Anomaly score ≥ 0.75 → incident created by Incident Service
+
+### HTTP Endpoints
+- `GET /health` — liveness probe
+- `GET /ready` — readiness probe (K8s-compatible)
+- `GET /metrics` — pipeline statistics
+- `GET /models` — per-tenant detector state
+- `GET /docs` — OpenAPI documentation
+
+See [09_ml_service.md](09_ml_service.md) and [services/ml-service/README.md](services/ml-service/README.md) for full documentation.
+
+---
+
+## 10. Tech Stack & Structure
 
 | Component | Technology |
 |---|---|
-| **Language** | Node.js (ESM) |
+| **Language (services)** | Node.js (ESM) |
+| **Language (ML)** | Python 3.12 |
 | **Messaging** | Apache Kafka |
 | **Databases** | PostgreSQL, TimescaleDB, MongoDB, Redis |
-| **Testing** | Jest |
+| **ML Framework** | scikit-learn (IsolationForest) |
+| **Testing** | Jest (Node.js), pytest (Python) |
 
 ### Repository Structure
 ```text
@@ -221,6 +261,7 @@ Scalable real-time push service using Redis Pub/Sub for horizontal fan-out.
 │   ├── ingestion-service/ # Command Side
 │   ├── incident-service/  # Logic/State
 │   ├── metrics-service/   # Processing
+│   ├── ml-service/        # ★ Anomaly Detection (Python)
 │   ├── remediation-service/ # Acting
 │   ├── query-service/     # Query Side
 │   └── websocket-service/ # Real-time Push
