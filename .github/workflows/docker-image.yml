@@ -32,3 +32,25 @@ jobs:
             --file services/ml-service/Dockerfile \
             --tag conduit-ml-service:${{ github.sha }} \
             services/ml-service
+
+      - name: Verify image runtime configuration
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+
+          config = json.loads(subprocess.check_output([
+              "docker", "image", "inspect",
+              "conduit-ml-service:${{ github.sha }}",
+              "--format", "{{json .Config}}",
+          ], text=True))
+
+          if config.get("User") != "conduit":
+              raise SystemExit("ML image must run as the non-root conduit user")
+          if "4008/tcp" not in config.get("ExposedPorts", {}):
+              raise SystemExit("ML image must expose port 4008")
+          healthcheck = config.get("Healthcheck", {}).get("Test", [])
+          if not any("/ready" in part for part in healthcheck):
+              raise SystemExit("ML image must define a /ready health check")
+          print("ML image user, exposed port, and health check are valid")
+          PY
