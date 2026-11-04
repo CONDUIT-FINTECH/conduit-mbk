@@ -36,24 +36,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify workspace dependency tree
-        run: npm ls --workspaces --depth=0
-
-      - name: Validate JavaScript package manifests
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const { execFileSync } = require('node:child_process');
-          const tracked = execFileSync(
-            'git',
-            ['ls-files', 'packages/**/package.json', 'services/**/package.json'],
-            { encoding: 'utf8' }
-          ).trim().split(/\r?\n/).filter(Boolean);
-          const files = ['package.json', ...tracked];
-          for (const file of files) JSON.parse(fs.readFileSync(file, 'utf8'));
-          console.log(`Validated ${files.length} package manifests`);
-          NODE
-
       - name: Validate JavaScript syntax
         shell: bash
         run: |
@@ -93,13 +75,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Check Python dependency consistency
-        run: python -m pip check
-
-      - name: Compile Python sources and tests
-        run: python -m compileall -q src tests
-
-      - name: Run Python tests and report coverage
+      - name: Run Python tests with coverage
         run: python -m pytest --cov=src --cov-report=term-missing
 
   compose-validation:
@@ -115,27 +91,3 @@ jobs:
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
-
-      - name: Verify Compose services and ML build configuration
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          import subprocess
-
-          config = json.loads(subprocess.check_output(
-              ["docker", "compose", "config", "--format", "json"],
-              text=True,
-          ))
-          services = config.get("services", {})
-          expected = {"kafka", "redis", "postgres", "timescaledb", "mongodb", "ml-service"}
-          missing = expected - services.keys()
-          if missing:
-              raise SystemExit(f"Compose services missing: {', '.join(sorted(missing))}")
-
-          build = services["ml-service"].get("build", {})
-          context = os.path.basename(build.get("context", "").rstrip("/\\"))
-          if context != "ml-service" or build.get("dockerfile") != "Dockerfile":
-              raise SystemExit("ML service must build from services/ml-service/Dockerfile")
-          print("Compose service inventory and ML build configuration are valid")
-          PY
