@@ -24,8 +24,7 @@ FROM python:3.12-slim
 
 # Runtime system deps (confluent-kafka needs librdkafka at runtime)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    librdkafka-dev \
-    curl \
+    librdkafka1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -45,6 +44,6 @@ EXPOSE 4008
 
 # K8s / Docker health check (matches /ready semantics)
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:4008/ready || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:4008/ready', timeout=5)" || exit 1
 
 CMD ["python", "-m", "src.main"]
