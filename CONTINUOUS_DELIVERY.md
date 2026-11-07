@@ -29,7 +29,7 @@ flowchart LR
     B --> V[Validate runtime and generate SBOM]
     V --> S[Trivy HIGH/CRITICAL scan]
     S --> A[Archive evidence and image]
-    A --> G{GHCR explicitly enabled?}
+    A --> G{Manual dispatch AND GHCR explicitly enabled?}
     G -->|No| R[Stop; no publish or deployment]
     G -->|Yes| H[Publish version and commit tags]
     H --> D[Record immutable registry digest]
@@ -38,7 +38,7 @@ flowchart LR
 
 `.github/workflows/cd.yml` supports `v*` tag pushes and manual dispatch with an existing release tag. Preflight restricts releases to semantic version tags whose commit is reachable from `main`, checks the exact commit, verifies the ML build inputs, and requires successful latest results for all four CI checks. The workflow builds and scans locally, then retains SBOM, scan output, build metadata, and the image archive as workflow artifacts.
 
-The scanner blocks HIGH and CRITICAL findings. A failed scan fails the build-and-scan job and prevents publication. No workflow deploys to production. Publishing is skipped unless the repository variable `GHCR_PUBLISH_ENABLED` is exactly `true`; manual runs also require the `publish_ghcr` input. The publisher alone receives `packages: write` and performs GHCR authentication. It refuses to overwrite an existing version or commit tag and serializes publishing. This opt-in is not enabled in the repository.
+The scanner blocks HIGH and CRITICAL findings. A failed scan fails the build-and-scan job and prevents publication. No workflow deploys to production. Publishing requires both a manual `workflow_dispatch` with `publish_ghcr: true` and the repository variable `GHCR_PUBLISH_ENABLED` set exactly to `true`; an ordinary tag push can never publish. The publisher alone receives `packages: write` and performs GHCR authentication. It refuses to overwrite an existing version or commit tag and serializes publishing. This opt-in is not enabled in the repository.
 
 ## Release instructions
 
@@ -62,7 +62,7 @@ GHCR publishing has not been validated and remains disabled. Before enabling it,
 1. Confirm the organization allows GitHub Actions to create and publish packages, and confirm the intended package namespace and visibility.
 2. Verify `GITHUB_TOKEN` package-write access is authorized for this repository and organization.
 3. Configure the repository variable `GHCR_PUBLISH_ENABLED=true` only after those checks.
-4. For a manually dispatched release, set `publish_ghcr` to `true`; tag-triggered releases publish only when the repository variable is enabled.
+4. Dispatch the workflow manually for the existing release tag and set `publish_ghcr` to `true`; tag-triggered runs never publish.
 
 No PAT or other credential is required or committed. If the organization requires package linking or approval, complete that in GitHub before opting in. Do not retry publication by adding broader permissions or credentials without authorization.
 
