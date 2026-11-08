@@ -227,8 +227,8 @@ jobs:
     needs: [release-preflight, build-and-scan]
     if: >-
       vars.GHCR_PUBLISH_ENABLED == 'true' &&
-      (github.event_name == 'push' ||
-       (github.event_name == 'workflow_dispatch' && inputs.publish_ghcr))
+      github.event_name == 'workflow_dispatch' &&
+      inputs.publish_ghcr == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
